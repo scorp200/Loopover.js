@@ -3,6 +3,7 @@ var loopover = (function() {
 	var scale = scale;
 	var size = 1;
 	var scaleFactor;
+	var translateX;
 	var tiles = [];
 	var tileImg;
 	var lastColumn;
@@ -15,6 +16,7 @@ var loopover = (function() {
 		size = _size;
 		scale = Math.floor(700 / size);
 		scaleFactor = size * scale;
+		translateX = Canvas.width / 2 - scaleFactor / 2;
 		tileImg = new Image();
 		tileImg.width = tileImg.height = scale * size;
 		for (var y = 0; y < size; y++) {
@@ -31,7 +33,6 @@ var loopover = (function() {
 				var r = (x / size);
 				var g = (y / size);
 				ctx.fillStyle = getRGB(255 - r * 255, g * 255, r * 255);
-				//ctx.fillStyle = getHSL(index / (size * size) * 200, 95, 47);
 				ctx.fillRect(x * scale, y * scale, scale, scale);
 				ctx.beginPath();
 				ctx.font = 'bold ' + scale * ratio + "px Helvetica";
@@ -41,33 +42,34 @@ var loopover = (function() {
 				ctx.fillText(index + 1, x * scale + scale / 2, y * scale + scale * 0.55);
 			}
 		}
-		tileImg.src = c.toDataURL('image/png');
+		tileImg.src = Canvas.toDataURL('image/png');
 		ctx.clearRect(0, 0, Canvas.width, Canvas.height);
 	}
 
 	function update(dt) {
+		var mouseX = Mouse.x - translateX;
 		if (!Mouse.down) {
-			lastMouse.x = Mouse.x;
+			lastmouseX = mouseX;
 			lastMouse.y = Mouse.y;
 			lastRow = Math.floor(Mouse.y / scale);
-			lastColumn = Math.floor(Mouse.x / scale);
-		} else if (Mouse.down && Mouse.x >= 0 && Mouse.x < scaleFactor && Mouse.y >= 0 && Mouse.y < scaleFactor) {
+			lastColumn = Math.floor(mouseX / scale);
+		} else if (Mouse.down && mouseX >= 0 && mouseX < scaleFactor && Mouse.y >= 0 && Mouse.y < scaleFactor) {
 			var row = Math.floor(Mouse.y / scale);
 			if (lastRow === undefined)
 				lastRow = row;
-			var column = Math.floor(Mouse.x / scale);
+			var column = Math.floor(mouseX / scale);
 			if (lastColumn === undefined)
 				lastColumn = column;
 			var tile = getTileAt(column, row);
 			var shifted = [];
 			if (lastColumn != column) {
-				var shift = scale * Math.sign(lastMouse.x - tile.x);
+				var shift = scale * Math.sign(lastmouseX - tile.x);
 				for (var x = 0; x < size; x++) {
 					var stile = getTileAt(x, row);
 					stile.x -= shift;
 					shifted.push(stile);
 					lastColumn = column;
-					lastMouse.x = Mouse.x;
+					lastmouseX = mouseX;
 					if (stile.x < 0) {
 						stile.x = (size - 1) * scale;
 						stile.tx = stile.x + (scale - stile.tx);
@@ -98,11 +100,21 @@ var loopover = (function() {
 			});
 			shifted.length = 0;
 		}
+		var win = true;
+		tiles.forEach(function(tile, i) {
+			easeTile(tile, 100 * dt);
+			if (tile.val != i)
+				win = false;
+		});
 	}
 
 	function render() {
+		ctx.save();
+		ctx.beginPath();
+		ctx.translate(translateX, 0);
+		ctx.rect(0, 0, scaleFactor, scaleFactor);
+		ctx.clip();
 		tiles.forEach(function(tile) {
-			easeTile(tile);
 			if (tile.tx < 0)
 				drawTile(tile.dx, tile.dy, scaleFactor + tile.tx, tile.ty);
 			else if (tile.tx > (size - 1) * scale)
@@ -113,6 +125,7 @@ var loopover = (function() {
 				drawTile(tile.dx, tile.dy, tile.tx, tile.ty - scaleFactor);
 			drawTile(tile.dx, tile.dy, tile.tx, tile.ty);
 		});
+		ctx.restore();
 	}
 
 	function drawTile(dx, dy, x, y) {
@@ -123,15 +136,15 @@ var loopover = (function() {
 		return tiles[x + y * size];
 	}
 
-	function easeTile(tile) {
+	function easeTile(tile, ease) {
 		if (Math.abs(tile.tx - tile.x) < 0.001)
 			tile.tx = tile.x;
 		else
-			tile.tx += (tile.x - tile.tx) / 2;
+			tile.tx += (tile.x - tile.tx) / ease;
 		if (Math.abs(tile.ty - tile.y) < 0.001)
 			tile.ty = tile.y;
 		else
-			tile.ty += (tile.y - tile.ty) / 2;
+			tile.ty += (tile.y - tile.ty) / ease;
 	}
 
 	return {

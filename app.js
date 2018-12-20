@@ -25,16 +25,17 @@ window.addEventListener("resize", resize, false);
 function resize() {
 	Canvas.width = window.innerWidth;
 	Canvas.height = window.innerHeight;
-	scaleMultiplayer = Math.round(Canvas.height * 0.8 / (64 * 13));
-	ctx.scale(scaleMultiplayer, scaleMultiplayer);
+	//scaleMultiplayer = Math.round(Canvas.height * 0.8 / 980);
+	//ctx.scale(scaleMultiplayer, scaleMultiplayer);
 	ctx.clearRect(0, 0, Canvas.width, Canvas.height);
 };
 
 var tickInterval = 1000 / 64;
 var lastTick;
 window.onload = function() {
-	lastTick = performance.now();
+	ui.init();
 	loopover.init(5);
+	lastTick = performance.now();
 	tick(lastTick);
 }
 
@@ -49,12 +50,18 @@ function tick(now) {
 }
 
 function update(dt) {
-	loopover.update();
+	loopover.update(dt / 1000);
 }
 
 function render() {
 	ctx.clearRect(0, 0, Canvas.width, Canvas.height);
 	loopover.render();
+	ctx.translate(0, 0);
+	ctx.font = 'bold 20px Helvetica';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'top';
+	ctx.fillText("By ai Doge aidoge.net", 140, 10);
+	ui.render();
 }
 
 function getHSL(h, s, l) {
