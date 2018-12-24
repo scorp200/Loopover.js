@@ -3,33 +3,31 @@ var loopover = (function() {
 	var scale = scale;
 	var size = 1;
 	var scaleFactor;
-	var translateX;
+	var translateX, translateY = 70;
 	var tiles = [];
 	var tileImg;
 	var lastColumn;
 	var lastRow;
 	var lastMouse = { x: 0, y: 0 };
 	var queDrag = [];
-	var ratio = 80 / 140;
 	var shifted = [];
-	var mouseX = 0;
+	var mouseX, mouseY = 0;
 
 	function init(_size) {
 		tiles.length = 0;
-		size = _size;
+		size = clamp(_size, 2, 20);
 		scale = Math.floor(700 / size);
 		scaleFactor = size * scale;
 		translateX = Canvas.width / 2 - scaleFactor / 2;
 		tileImg = new Image();
 		tileImg.width = tileImg.height = scale * size;
+		console.log(scale / 2);
 		for (var y = 0; y < size; y++) {
 			for (var x = 0; x < size; x++) {
 				var index = x + y * size;
 				var tile = { val: index };
-				tile.x = tile.tx = x * scale;
-				tile.y = tile.ty = y * scale;
-				tile.dx = scale * x;
-				tile.dy = scale * y;
+				tile.x = tile.dx = tile.tx = x * scale;
+				tile.y = tile.dy = tile.ty = y * scale;
 				tiles.push(tile);
 				//generate spritesheet
 				ctx.beginPath();
@@ -51,13 +49,14 @@ var loopover = (function() {
 
 	function update(dt) {
 		mouseX = Mouse.x - translateX;
+		mouseY = Mouse.y - translateY;
 		if (!Mouse.down) {
 			lastmouseX = mouseX;
-			lastMouse.y = Mouse.y;
-			lastRow = Math.floor(Mouse.y / scale);
+			lastMouse.y = mouseY;
+			lastRow = Math.floor(mouseY / scale);
 			lastColumn = Math.floor(mouseX / scale);
-		} else if (Mouse.down && mouseX >= 0 && mouseX < scaleFactor && Mouse.y >= 0 && Mouse.y < scaleFactor) {
-			var row = Math.floor(Mouse.y / scale);
+		} else if (Mouse.down && mouseX >= 0 && mouseX < scaleFactor && mouseY >= 0 && mouseY < scaleFactor) {
+			var row = Math.floor(mouseY / scale);
 			if (lastRow === undefined)
 				lastRow = row;
 			var column = Math.floor(mouseX / scale);
@@ -81,7 +80,7 @@ var loopover = (function() {
 	function render() {
 		ctx.save();
 		ctx.beginPath();
-		ctx.translate(translateX, 0);
+		ctx.translate(translateX, translateY);
 		ctx.rect(0, 0, scaleFactor, scaleFactor);
 		ctx.clip();
 		tiles.forEach(function(tile) {
@@ -104,7 +103,7 @@ var loopover = (function() {
 			stile.y -= scale * shift;
 			shifted.push(stile);
 			lastRow = row;
-			lastMouse.y = Mouse.y;
+			lastMouse.y = mouseY;
 			if (stile.y < 0) {
 				var diff = stile.y + scale;
 				stile.y = (size - 1) * scale + diff;
@@ -177,6 +176,9 @@ var loopover = (function() {
 		update: update,
 		render: render,
 		init: init,
-		shuffle: shuffle
+		shuffle: shuffle,
+		get scaleFactor() { return scaleFactor },
+		get translateX() { return translateX },
+		get size() { return size }
 	}
 })();

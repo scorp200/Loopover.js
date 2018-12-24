@@ -2,7 +2,9 @@ var Canvas = document.getElementById("c");
 var ctx = Canvas.getContext("2d", { alpha: false });
 ctx.imageSmoothingEnabled = true;
 var scaleMultiplayer = 1;
-var Mouse = { x: 0, y: 0, vx: 0, vy: 0, down: false };
+var ratio = 80 / 140;
+var gameSize = 5;
+var Mouse = { x: 0, y: 0, vx: 0, vy: 0, down: false, click: false };
 window.addEventListener("mousemove", function(e) {
 	var rect = Canvas.getBoundingClientRect();
 	Mouse.x = (e.clientX - rect.left) / scaleMultiplayer;
@@ -11,6 +13,8 @@ window.addEventListener("mousemove", function(e) {
 	Mouse.vy = (Mouse.y - Canvas.height / 2);
 }, false);
 window.addEventListener("mousedown", function(e) {
+	if (!Mouse.down)
+		Mouse.click = true;
 	Mouse.down = true;
 }, false);
 window.addEventListener("mouseup", function(e) {
@@ -33,8 +37,8 @@ function resize() {
 var tickInterval = 1000 / 64;
 var lastTick;
 window.onload = function() {
+	loopover.init(gameSize);
 	ui.init();
-	loopover.init(5);
 	lastTick = performance.now();
 	tick(lastTick);
 }
@@ -50,17 +54,16 @@ function tick(now) {
 }
 
 function update(dt) {
-	loopover.update(dt / 1000);
+	dt = dt / 1000;
+	loopover.update(dt);
+	ui.update(dt);
+	Mouse.click = false;
 }
 
 function render() {
 	ctx.clearRect(0, 0, Canvas.width, Canvas.height);
 	loopover.render();
 	ctx.translate(0, 0);
-	ctx.font = 'bold 20px Helvetica';
-	ctx.textAlign = 'center';
-	ctx.textBaseline = 'top';
-	ctx.fillText("By ai Doge aidoge.net", 140, 10);
 	ui.render();
 }
 
@@ -86,4 +89,8 @@ function ease(value, target, ease, precision) {
 	if (Math.abs(value - target) < precision)
 		return 0;
 	return (target - value) / ease;
+}
+
+function clamp(value, min, max) {
+	return value > max ? max : value < min ? min : value;
 }
