@@ -11,8 +11,11 @@ var loopover = (function() {
 	var lastMouse = { x: 0, y: 0 };
 	var queDrag = [];
 	var ratio = 80 / 140;
+	var shifted = [];
+	var mouseX = 0;
 
 	function init(_size) {
+		tiles.length = 0;
 		size = _size;
 		scale = Math.floor(700 / size);
 		scaleFactor = size * scale;
@@ -47,7 +50,7 @@ var loopover = (function() {
 	}
 
 	function update(dt) {
-		var mouseX = Mouse.x - translateX;
+		mouseX = Mouse.x - translateX;
 		if (!Mouse.down) {
 			lastmouseX = mouseX;
 			lastMouse.y = Mouse.y;
@@ -61,44 +64,11 @@ var loopover = (function() {
 			if (lastColumn === undefined)
 				lastColumn = column;
 			var tile = getTileAt(column, row);
-			var shifted = [];
-			if (lastColumn != column) {
-				var shift = scale * Math.sign(lastmouseX - tile.x);
-				for (var x = 0; x < size; x++) {
-					var stile = getTileAt(x, row);
-					stile.x -= shift;
-					shifted.push(stile);
-					lastColumn = column;
-					lastmouseX = mouseX;
-					if (stile.x < 0) {
-						stile.x = (size - 1) * scale;
-						stile.tx = stile.x + (scale - stile.tx);
-					} else if (stile.x > (size - 1) * scale) {
-						stile.x = 0;
-						stile.tx = stile.x - (scaleFactor - stile.tx);
-					}
-				}
-			} else if (lastRow != row) {
-				var shift = scale * Math.sign(lastMouse.y - tile.y);
-				for (var y = 0; y < size; y++) {
-					var stile = getTileAt(column, y);
-					stile.y -= shift;
-					shifted.push(stile);
-					lastRow = row;
-					lastMouse.y = Mouse.y;
-					if (stile.y < 0) {
-						stile.y = (size - 1) * scale;
-						stile.ty = stile.y + (scale - stile.ty);
-					} else if (stile.y > (size - 1) * scale) {
-						stile.y = 0;
-						stile.ty = stile.y - (scaleFactor - stile.ty);
-					}
-				}
-			}
-			shifted.forEach(function(tile) {
-				tiles[Math.round(tile.x) / scale + Math.round(tile.y) / scale * size] = tile;
-			});
 			shifted.length = 0;
+			if (lastColumn != column)
+				shiftHorizontal(Math.sign(lastmouseX - tile.x), row, column);
+			else if (lastRow != row)
+				shiftVertical(Math.sign(lastMouse.y - tile.y), row, column);
 		}
 		var win = true;
 		tiles.forEach(function(tile, i) {
@@ -128,6 +98,62 @@ var loopover = (function() {
 		ctx.restore();
 	}
 
+	function shiftVertical(shift, row, column) {
+		for (var y = 0; y < size; y++) {
+			var stile = getTileAt(column, y);
+			stile.y -= scale * shift;
+			shifted.push(stile);
+			lastRow = row;
+			lastMouse.y = Mouse.y;
+			if (stile.y < 0) {
+				var diff = stile.y + scale;
+				stile.y = (size - 1) * scale + diff;
+				stile.ty = stile.y + (scale - stile.ty);
+			} else if (stile.y > (size - 1) * scale) {
+				var diff = (size - 1) * scale - stile.y + scale;
+				stile.y = -diff;
+				stile.ty = stile.y - (scaleFactor - stile.ty);
+			}
+		}
+		setShiftedTiles();
+	}
+
+	function shiftHorizontal(shift, row, column) {
+		for (var x = 0; x < size; x++) {
+			var stile = getTileAt(x, row);
+			stile.x -= scale * shift;
+			shifted.push(stile);
+			lastColumn = column;
+			lastmouseX = mouseX;
+			if (stile.x < 0) {
+				var diff = stile.x + scale;
+				stile.x = (size - 1) * scale + diff;
+				stile.tx = stile.x + (scale - stile.tx);
+			} else if (stile.x > (size - 1) * scale) {
+				var diff = (size - 1) * scale - stile.x + scale;
+				stile.x = -diff;
+				stile.tx = stile.x - (scaleFactor - stile.tx);
+			}
+		}
+		setShiftedTiles();
+	}
+
+	function setShiftedTiles() {
+		shifted.forEach(function(tile) {
+			tiles[Math.round(tile.x) / scale + Math.round(tile.y) / scale * size] = tile;
+		});
+		shifted.length = 0;
+	}
+
+	function shuffle(times) {
+		while (times-- > 0) {
+			var shift = Math.ceil(Math.random() * (size - 1));
+			var row = Math.floor(Math.random() * size);
+			var column = Math.floor(Math.random() * size);
+			Math.random() > 0.5 ? shiftHorizontal(shift, row, column) : shiftVertical(shift, row, column);
+		}
+	}
+
 	function drawTile(dx, dy, x, y) {
 		ctx.drawImage(tileImg, dx, dy, scale, scale, x, y, scale, scale);
 	}
@@ -150,6 +176,7 @@ var loopover = (function() {
 	return {
 		update: update,
 		render: render,
-		init: init
+		init: init,
+		shuffle: shuffle
 	}
 })();
