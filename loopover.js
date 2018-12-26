@@ -14,14 +14,13 @@ var loopover = (function() {
 	var mouseX, mouseY = 0;
 
 	function init(_size) {
-		tiles.length = 0;
+		tiles = [];
 		size = clamp(_size, 2, 20);
 		scale = Math.floor(700 / size);
 		scaleFactor = size * scale;
 		translateX = Canvas.width / 2 - scaleFactor / 2;
 		tileImg = new Image();
 		tileImg.width = tileImg.height = scale * size;
-		console.log(scale / 2);
 		for (var y = 0; y < size; y++) {
 			for (var x = 0; x < size; x++) {
 				var index = x + y * size;

@@ -16,6 +16,10 @@ var ui = (function() {
 				onClick: function() {
 					loopover.shuffle(500);
 				}
+			}, {
+				text: 'Size',
+				onClick: function() {},
+				noColor: true
 			},
 			{
 				text: 'Up',
@@ -39,7 +43,10 @@ var ui = (function() {
 			btn.y = buttonY + i * buttonHeight;
 			var r = i / buttons.length;
 			ctx.beginPath();
-			ctx.fillStyle = getRGB(255 - r * 255, 150, r * 255);
+			if (btn.noColor)
+				ctx.fillStyle = 'rgba(0,0,0,0)';
+			else
+				ctx.fillStyle = getRGB(255 - r * 255, 150, r * 255);
 			ctx.fillRect(0, i * scale * 0.3, scale, buttonHeight);
 			ctx.font = 'bold ' + buttonHeight * ratio + "px Helvetica";
 			ctx.textAlign = "center";
